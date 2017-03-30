@@ -1,6 +1,6 @@
 import os
 from data_utils import get_trimmed_glove_vectors, load_vocab, \
-    get_vocab_processing, CoNLLDataset
+    get_processing_word, CoNLLDataset
 from general_utils import get_logger
 from model import NERModel
 from config import config
@@ -8,11 +8,15 @@ from config import config
 if not os.path.exists(config.output_path):
     os.makedirs(config.output_path)
 
+vocab_words = load_vocab(config.words_filename)
+vocab_tags  = load_vocab(config.tags_filename)
+vocab_chars = load_vocab(config.chars_filename)
+
+processing_word = get_processing_word(vocab_words, vocab_chars, 
+    lowercase=config.lowercase, chars=config.chars)
+processing_tag  = get_processing_word(vocab_tags, lowercase=False)
+
 embeddings = get_trimmed_glove_vectors(config.trimmed_filename)
-vocab_words = load_vocab(config.vocab_filename)
-processing_word = get_vocab_processing(vocab_words, config.lowercase)
-vocab_tags = load_vocab(config.tags_filename)
-processing_tag = get_vocab_processing(vocab_tags, False)
 
 dev = CoNLLDataset(config.dev_filename, processing_word, 
     processing_tag, config.max_iter)
@@ -22,7 +26,7 @@ train = CoNLLDataset(config.train_filename, processing_word,
     processing_tag, config.max_iter)
 
 logger = get_logger(config.log_path)
-model = NERModel(config, embeddings, logger)
+model = NERModel(config, embeddings, nchars=len(vocab_chars), logger=logger)
 model.build()
 model.train(train, dev, vocab_tags)
 model.evaluate(test, vocab_tags)

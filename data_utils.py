@@ -8,6 +8,7 @@ NONE = "O"
 class CoNLLDataset(object):
     """
     Class that iterates over CoNLL Dataset
+
     __iter__ method yields a tuple (words, tags)
         words: list of raw words
         tags: list of raw tags
@@ -71,7 +72,7 @@ class CoNLLDataset(object):
         return self.length
 
 
-def get_vocab(datasets, lowercase=False):
+def get_vocabs(datasets):
     """
     Args:
         datasets: a list of dataset objects
@@ -83,12 +84,25 @@ def get_vocab(datasets, lowercase=False):
     vocab_tags = set()
     for dataset in datasets:
         for words, tags in dataset:
-            if lowercase:
-                words = map(lambda x: x.lower(), words)
             vocab_words.update(words)
             vocab_tags.update(tags)
     print "- done. {} words".format(len(vocab_words))
     return vocab_words, vocab_tags
+
+
+def get_char_vocab(dataset):
+    """
+    Args:
+        dataset: a iterator yielding tuples (sentence, tags)
+    Returns:
+        a set of all the characters in the dataset
+    """
+    vocab_char = set()
+    for words, _ in dataset:
+        for word in words:
+            vocab_char.update(word)
+
+    return vocab_char
 
 
 def get_glove_vocab(filename):
@@ -107,18 +121,21 @@ def get_glove_vocab(filename):
 
 
 def write_vocab(vocab, filename):
-    """
-    Writes a vocab to a file
+    """Writes a vocab to a file
+
     Args:
         vocab: iterable that yields word
         filename: path to vocab file
-    Return:
+    Returns:
         write a word per line
     """
     print "Writing vocab..."
     with open(filename, "w") as f:
-        for word in vocab:
-            f.write("{}\n".format(word))
+        for i, word in enumerate(vocab):
+            if i != len(vocab) - 1:
+                f.write("{}\n".format(word))
+            else:
+                f.write(word)
     print "- done. {} words".format(len(vocab))
 
 
@@ -140,6 +157,8 @@ def load_vocab(filename):
 
 def export_trimmed_glove_vectors(vocab, glove_filename, trimmed_filename, dim):
     """
+    Saves glove vectors in numpy array
+    
     Args:
         vocab: dictionary vocab[word] = index
         glove_filename: a path to a glove file
@@ -161,40 +180,101 @@ def export_trimmed_glove_vectors(vocab, glove_filename, trimmed_filename, dim):
 
 def get_trimmed_glove_vectors(filename):
     """
-    filename: path to the npz file
+    Args:
+        filename: path to the npz file
+    Returns:
+        matrix of embeddings (np array)
     """
     with open(filename) as f:
         return np.load(f)["embeddings"]
 
 
-def get_vocab_processing(vocab, lowercase=False):
+def get_processing_word(vocab_words=None, vocab_chars=None, 
+                    lowercase=False, chars=False):
     """
     Args:
         vocab: dict[word] = idx
     Returns: 
-        function word -> idx
+        f("cat") = ([12, 4, 32], 12345)
+                 = (list of char ids, word id)
     """
     def f(word):
+        # 0. get chars of words
+        if vocab_chars is not None and chars == True:
+            char_ids = []
+            for char in word:
+                # ignore chars out of vocabulary
+                if char in vocab_chars:
+                    char_ids += [vocab_chars[char]]
+
+        # 1. preprocess word
         if lowercase:
             word = word.lower()
         if word.isdigit():
-            return vocab[NUM]
-        if word in vocab:
-            return vocab[word]
+            word = NUM
+
+        # 2. get id of word
+        if vocab_words is not None:
+            if word in vocab_words:
+                word = vocab_words[word]
+            else:
+                word = vocab_words[UNK]
+
+        # 3. return tuple char ids, word id
+        if vocab_chars is not None and chars == True:
+            return char_ids, word
         else:
-            return vocab[UNK]
+            return word
 
     return f
 
 
-def pad_sequences(sequences, pad_tok):
+def _pad_sequences(sequences, pad_tok, max_length):
+    """
+    Args:
+        sequences: a generator of list or tuple
+        pad_tok: the char to pad with
+    Returns:
+        a list of list where each sublist has same length
+    """
     sequence_padded, sequence_length = [], []
-    max_length = max(map(lambda x : len(x), sequences))
 
     for seq in sequences:
+        seq = list(seq)
         seq_ = seq[:max_length] + [pad_tok]*max(max_length - len(seq), 0)
         sequence_padded +=  [seq_]
         sequence_length += [min(len(seq), max_length)]
+
+    return sequence_padded, sequence_length
+
+
+def pad_sequences(sequences, pad_tok, nlevels=1):
+    """
+    Args:
+        sequences: a generator of list or tuple
+        pad_tok: the char to pad with
+    Returns:
+        a list of list where each sublist has same length
+    """
+    if nlevels == 1:
+        max_length = max(map(lambda x : len(x), sequences))
+        sequence_padded, sequence_length = _pad_sequences(sequences, 
+                                            pad_tok, max_length)
+        
+    elif nlevels == 2:
+        max_length_word = max([max(map(lambda x: len(x), seq)) for seq in sequences])
+        sequence_padded, sequence_length = [], []
+        for seq in sequences:
+            # all words are same length now
+            sp, sl = _pad_sequences(seq, pad_tok, max_length_word)
+            sequence_padded += [sp]
+            sequence_length += [sl]
+
+        max_length_sentence = max(map(lambda x : len(x), sequences))
+        sequence_padded, _ = _pad_sequences(sequence_padded, [pad_tok]*max_length_word, 
+                                            max_length_sentence)
+        sequence_length, _ = _pad_sequences(sequence_length, 0, max_length_sentence)
+
 
     return sequence_padded, sequence_length
 
@@ -205,6 +285,9 @@ def minibatches(data, minibatch_size):
         if len(x_batch) == minibatch_size:
             yield x_batch, y_batch
             x_batch, y_batch = [], []
+        
+        if type(x[0]) == tuple:
+            x = zip(*x)
         x_batch += [x]
         y_batch += [y]
 

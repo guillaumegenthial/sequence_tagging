@@ -5,8 +5,8 @@ import numpy as np
 
 
 def print_sentence(logger, data):
-    """
-    Adapted from Assignment 3 of CS224N
+    """Adapted from Assignment 3 of CS224N
+
     Args:
         logger: logger instance
         data: dict d["x"] = ["I", "live", ...]
@@ -33,8 +33,8 @@ def get_logger(filename):
 
 
 class Progbar(object):
-    """
-    Progbar class copied from keras (https://github.com/fchollet/keras/)
+    """Progbar class copied from keras (https://github.com/fchollet/keras/)
+    
     Displays a progress bar.
     Small edit : added strict arg to update
     # Arguments
