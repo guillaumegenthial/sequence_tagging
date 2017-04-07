@@ -1,6 +1,7 @@
 # Sequence Tagging with Tensorflow
 
 This repo implements a sequence tagging model using tensorflow.
+Check my [blog post](https://guillaumegenthial.github.io/sequence-tagging-with-tensorflow.html)
 
 ## Task
 
