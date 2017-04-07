@@ -332,7 +332,7 @@ def get_chunks(seq, tags):
             tok_chunk_type = get_chunk_type(tok, idx_to_tag)
             if chunk_type is None:
                 chunk_type, chunk_start = tok_chunk_type, i
-            elif tok_chunk_type != chunk_type:
+            elif tok_chunk_type != chunk_type or tok[0] == "B":
                 chunk = (chunk_type, chunk_start, i)
                 chunks.append(chunk)
                 chunk_type, chunk_start = tok_chunk_type, i
