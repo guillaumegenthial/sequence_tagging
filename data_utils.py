@@ -60,6 +60,7 @@ class CoNLLDataset(object):
                     words += [word]
                     tags += [tag]
 
+
     def __len__(self):
         """
         Iterates once over the corpus to set and store length
@@ -121,7 +122,8 @@ def get_glove_vocab(filename):
 
 
 def write_vocab(vocab, filename):
-    """Writes a vocab to a file
+    """
+    Writes a vocab to a file
 
     Args:
         vocab: iterable that yields word
@@ -280,6 +282,13 @@ def pad_sequences(sequences, pad_tok, nlevels=1):
 
 
 def minibatches(data, minibatch_size):
+    """
+    Args:
+        data: generator of (sentence, tags) tuples
+        minibatch_size: (int)
+    Returns: 
+        list of tuples
+    """
     x_batch, y_batch = [], []
     for (x, y) in data:
         if len(x_batch) == minibatch_size:

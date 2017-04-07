@@ -7,9 +7,16 @@ from general_utils import Progbar, print_sentence
 
 class NERModel(object):
     def __init__(self, config, embeddings, nchars=None, logger=None):
-        self.config = config
+        """
+        Args:
+            config: class with hyper parameters
+            embeddings: np array with embeddings
+            nchars: (int) size of chars vocabulary
+            logger: logger instance
+        """
+        self.config     = config
         self.embeddings = embeddings
-        self.nchars = nchars
+        self.nchars     = nchars
         
         if logger is None:
             logger = logging.getLogger('logger')
@@ -20,6 +27,10 @@ class NERModel(object):
 
 
     def add_placeholders(self):
+        """
+        Adds placeholders to self
+        """
+
         # shape = (batch size, max length of sentence in batch)
         self.word_ids = tf.placeholder(tf.int32, shape=[None, None], 
                         name="word_ids")
@@ -40,6 +51,7 @@ class NERModel(object):
         self.labels = tf.placeholder(tf.int32, shape=[None, None],
                         name="labels")
 
+        # hyper parameters
         self.dropout = tf.placeholder(dtype=tf.float32, shape=[], 
                         name="dropout")
         self.lr = tf.placeholder(dtype=tf.float32, shape=[], 
@@ -47,6 +59,18 @@ class NERModel(object):
 
 
     def get_feed_dict(self, words, labels=None, lr=None, dropout=None):
+        """
+        Given some data, pad it and build a feed dictionary
+        Args:
+            words: list of sentences. A sentence is a list of ids of a list of words. 
+                A word is a list of ids
+            labels: list of ids
+            lr: (float) learning rate
+            dropout: (float) keep prob
+        Returns:
+            dict {placeholder: value}
+        """
+        # perform padding of the given data
         if self.config.chars:
             char_ids, word_ids = zip(*words)
             word_ids, sequence_lengths = pad_sequences(word_ids, 0)
@@ -54,6 +78,7 @@ class NERModel(object):
         else:
             word_ids, sequence_lengths = pad_sequences(words, 0)
 
+        # build feed dictionary
         feed = {
             self.word_ids: word_ids,
             self.sequence_lengths: sequence_lengths
@@ -77,6 +102,9 @@ class NERModel(object):
 
 
     def add_word_embeddings_op(self):
+        """
+        Adds word embeddings to self
+        """
         with tf.variable_scope("words"):
             _word_embeddings = tf.Variable(self.embeddings, name="_word_embeddings", dtype=tf.float32, 
                                 trainable=self.config.train_embeddings)
@@ -85,6 +113,7 @@ class NERModel(object):
 
         with tf.variable_scope("chars"):
             if self.config.chars:
+                # get embeddings matrix
                 _char_embeddings = tf.get_variable(name="_char_embeddings", dtype=tf.float32, 
                     shape=[self.nchars, self.config.dim_char])
                 char_embeddings = tf.nn.embedding_lookup(_char_embeddings, self.char_ids, 
@@ -109,6 +138,9 @@ class NERModel(object):
 
 
     def add_logits_op(self):
+        """
+        Adds logits to self
+        """
         with tf.variable_scope("bi-lstm"):
             lstm_cell = tf.contrib.rnn.LSTMCell(self.config.hidden_size)
             (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(lstm_cell, 
@@ -130,12 +162,15 @@ class NERModel(object):
             self.logits = tf.reshape(pred, [-1, ntime_steps, self.config.ntags])
 
     def add_pred_op(self):
+        """
+        Adds labels_pred to self
+        """
         if not self.config.crf:
             self.labels_pred = tf.cast(tf.argmax(self.logits, axis=-1), tf.int32)
 
     def add_loss_op(self):
         """
-        Defines self.loss
+        Adds loss to self
         """
         if self.config.crf:
             log_likelihood, self.transition_params = tf.contrib.crf.crf_log_likelihood(
@@ -147,12 +182,13 @@ class NERModel(object):
             losses = tf.boolean_mask(losses, mask)
             self.loss = tf.reduce_mean(losses)
 
+        # for tensorboard
         tf.summary.scalar("loss", self.loss)
 
 
     def add_train_op(self):
         """
-        Defines self.train_op
+        Add train_op to self
         """
         with tf.variable_scope("train_step"):
             optimizer = tf.train.AdamOptimizer(self.lr)
@@ -162,7 +198,9 @@ class NERModel(object):
     def add_init_op(self):
         self.init = tf.global_variables_initializer()
 
+
     def add_summary(self, sess): 
+        # tensorboard stuff
         self.merged = tf.summary.merge_all()
         self.file_writer = tf.summary.FileWriter(self.config.output_path, sess.graph)
 
@@ -178,13 +216,23 @@ class NERModel(object):
 
 
     def predict_batch(self, sess, words):
+        """
+        Args:
+            sess: a tensorflow session
+            words: list of sentences
+        Returns:
+            labels_pred: list of labels for each sentence
+            sequence_length
+        """
         fd, sequence_lengths = self.get_feed_dict(words, dropout=1.0)
 
         if self.config.crf:
             viterbi_sequences = []
             logits, transition_params = sess.run([self.logits, self.transition_params], 
                     feed_dict=fd)
+            # iterate over the sentences
             for logit, sequence_length in zip(logits, sequence_lengths):
+                # keep only the valid time steps
                 logit = logit[:sequence_length]
                 viterbi_sequence, viterbi_score = tf.contrib.crf.viterbi_decode(
                                 logit, transition_params)
@@ -199,6 +247,15 @@ class NERModel(object):
 
 
     def run_epoch(self, sess, train, dev, tags, epoch):
+        """
+        Performs one complete pass over the train set and evaluate on dev
+        Args:
+            sess: tensorflow session
+            train: dataset that yields tuple of sentences, tags
+            dev: dataset
+            tags: {tag: index} dictionary
+            epoch: (int) number of the epoch
+        """
         nbatches = (len(train) + self.config.batch_size - 1) / self.config.batch_size
         prog = Progbar(target=nbatches)
         for i, (words, labels) in enumerate(minibatches(train, self.config.batch_size)):
@@ -207,6 +264,8 @@ class NERModel(object):
             _, train_loss, summary = sess.run([self.train_op, self.loss, self.merged], feed_dict=fd)
 
             prog.update(i + 1, [("train loss", train_loss)])
+
+            # tensorboard
             if i % 10 == 0:
                 self.file_writer.add_summary(summary, epoch*nbatches + i)
 
@@ -216,6 +275,16 @@ class NERModel(object):
 
 
     def run_evaluate(self, sess, test, tags):
+        """
+        Evaluates performance on test set
+        Args:
+            sess: tensorflow session
+            test: dataset that yields tuple of sentences, tags
+            tags: {tag: index} dictionary
+        Returns:
+            accuracy
+            f1 score
+        """
         accs = []
         correct_preds, total_correct, total_preds = 0., 0., 0.
         for words, labels in minibatches(test, self.config.batch_size):
@@ -240,16 +309,30 @@ class NERModel(object):
 
 
     def train(self, train, dev, tags):
+        """
+        Performs training with early stopping and lr exponential decay
+        Args:
+            train: dataset that yields tuple of sentences, tags
+            dev: dataset
+            tags: {tag: index} dictionary
+        """
         best_score = 0
         saver = tf.train.Saver()
+        # for early stopping
         nepoch_no_imprv = 0
         with tf.Session() as sess:
             sess.run(self.init)
+            # tensorboard
             self.add_summary(sess)
             for epoch in range(self.config.nepochs):
                 self.logger.info("Epoch {:} out of {:}".format(epoch + 1, self.config.nepochs))
+
                 acc, f1 = self.run_epoch(sess, train, dev, tags, epoch)
+
+                # decay learning rate
                 self.config.lr *= self.config.lr_decay
+
+                # early stopping and saving best parameters
                 if f1 >= best_score:
                     nepoch_no_imprv = 0
                     if not os.path.exists(self.config.model_output):
@@ -257,6 +340,7 @@ class NERModel(object):
                     saver.save(sess, self.config.model_output)
                     best_score = f1
                     self.logger.info("- new best score!")
+
                 else:
                     nepoch_no_imprv += 1
                     if nepoch_no_imprv >= self.config.nepoch_no_imprv:

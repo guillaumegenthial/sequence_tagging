@@ -20,10 +20,10 @@ class config():
     lr_decay = 0.9
     nepoch_no_imprv = 3
 
-    hidden_size = dim
+    hidden_size = 50
     char_hidden_size = 50
-    crf = False # if crf, training is 1.7x slower
-    chars = False # if char embedding, training is 3.5x slower
+    crf = True # if crf, training is 1.7x slower
+    chars = True # if char embedding, training is 3.5x slower
     output_path = "results/crf/"
     model_output = output_path + "model.weights/"
     log_path = output_path + "log.txt"
