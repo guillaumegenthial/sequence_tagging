@@ -6,7 +6,7 @@ from general_utils import Progbar, print_sentence
 
 
 class NERModel(object):
-    def __init__(self, config, embeddings, nchars=None, logger=None):
+    def __init__(self, config, embeddings, ntags, nchars=None, logger=None):
         """
         Args:
             config: class with hyper parameters
@@ -17,6 +17,7 @@ class NERModel(object):
         self.config     = config
         self.embeddings = embeddings
         self.nchars     = nchars
+        self.ntags      = ntags
         
         if logger is None:
             logger = logging.getLogger('logger')
@@ -150,16 +151,16 @@ class NERModel(object):
             output = tf.nn.dropout(output, self.dropout)
 
         with tf.variable_scope("proj"):
-            W = tf.get_variable("W", shape=[2*self.config.hidden_size, self.config.ntags], 
+            W = tf.get_variable("W", shape=[2*self.config.hidden_size, self.ntags], 
                 dtype=tf.float32)
 
-            b = tf.get_variable("b", shape=[self.config.ntags], dtype=tf.float32, 
+            b = tf.get_variable("b", shape=[self.ntags], dtype=tf.float32, 
                 initializer=tf.zeros_initializer())
 
             ntime_steps = tf.shape(output)[1]
             output = tf.reshape(output, [-1, 2*self.config.hidden_size])
             pred = tf.matmul(output, W) + b
-            self.logits = tf.reshape(pred, [-1, ntime_steps, self.config.ntags])
+            self.logits = tf.reshape(pred, [-1, ntime_steps, self.ntags])
 
     def add_pred_op(self):
         """

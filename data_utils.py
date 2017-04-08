@@ -87,7 +87,7 @@ def get_vocabs(datasets):
         for words, tags in dataset:
             vocab_words.update(words)
             vocab_tags.update(tags)
-    print "- done. {} words".format(len(vocab_words))
+    print "- done. {} tokens".format(len(vocab_words))
     return vocab_words, vocab_tags
 
 
@@ -117,7 +117,7 @@ def get_glove_vocab(filename):
         for line in f:
             word = line.strip().split(' ')[0]
             vocab.add(word)
-    print "- done. {} words".format(len(vocab))
+    print "- done. {} tokens".format(len(vocab))
     return vocab
 
 
@@ -138,7 +138,7 @@ def write_vocab(vocab, filename):
                 f.write("{}\n".format(word))
             else:
                 f.write(word)
-    print "- done. {} words".format(len(vocab))
+    print "- done. {} tokens".format(len(vocab))
 
 
 def load_vocab(filename):
@@ -314,6 +314,13 @@ def get_chunks(seq, tags):
     Args:
         seq: [4, 4, 0, 0, ...] sequence of labels
         tags: dict["O"] = 4
+    Returns:
+        list of (chunk_type, chunk_start, chunk_end)
+
+    Example:
+        seq = [4, 5, 0, 3]
+        tags = {"B-PER": 4, "I-PER": 5, "B-LOC": 3}
+        result = [("PER", 0, 2), ("LOC", 3, 4)]
     """
     default = tags[NONE]
     idx_to_tag = {idx: tag for tag, idx in tags.iteritems()}

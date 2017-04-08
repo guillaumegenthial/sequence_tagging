@@ -16,25 +16,26 @@ vocab_chars = load_vocab(config.chars_filename)
 
 # get processing functions
 processing_word = get_processing_word(vocab_words, vocab_chars, 
-    lowercase=config.lowercase, chars=config.chars)
+                lowercase=config.lowercase, chars=config.chars)
 processing_tag  = get_processing_word(vocab_tags, lowercase=False)
 
 # get pre trained embeddings
 embeddings = get_trimmed_glove_vectors(config.trimmed_filename)
 
 # create dataset
-dev = CoNLLDataset(config.dev_filename, processing_word, 
-    processing_tag, config.max_iter)
-test = CoNLLDataset(config.test_filename, processing_word, 
-    processing_tag, config.max_iter)
+dev   = CoNLLDataset(config.dev_filename, processing_word, 
+                    processing_tag, config.max_iter)
+test  = CoNLLDataset(config.test_filename, processing_word, 
+                    processing_tag, config.max_iter)
 train = CoNLLDataset(config.train_filename, processing_word, 
-    processing_tag, config.max_iter)
+                    processing_tag, config.max_iter)
 
 # get logger
 logger = get_logger(config.log_path)
 
 # build model
-model = NERModel(config, embeddings, nchars=len(vocab_chars), logger=logger)
+model = NERModel(config, embeddings, ntags=len(vocab_tags), 
+                nchars=len(vocab_chars), logger=logger)
 model.build()
 
 # train, evaluate and interact
