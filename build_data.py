@@ -1,4 +1,4 @@
-from config import config
+from config import Config
 from data_utils import CoNLLDataset, get_vocabs, UNK, NUM, \
     get_glove_vocab, write_vocab, load_vocab, get_char_vocab, \
     export_trimmed_glove_vectors, get_processing_word
@@ -14,7 +14,7 @@ def build_data(config):
         creates vocab files from the datasets
         creates a npz embedding file from trimmed glove vectors
     """
-    processing_word = get_processing_word(lowercase=config.lowercase)
+    processing_word = get_processing_word(lowercase=True)
 
     # Generators
     dev   = CoNLLDataset(config.dev_filename, processing_word)
@@ -45,4 +45,5 @@ def build_data(config):
 
 
 if __name__ == "__main__":
+    config = Config()
     build_data(config)

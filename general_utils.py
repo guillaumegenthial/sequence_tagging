@@ -5,15 +5,16 @@ import numpy as np
 
 
 def print_sentence(logger, data):
-    """Adapted from Assignment 3 of CS224N
+    """
+    Adapted from Assignment 3 of CS224N
 
     Args:
         logger: logger instance
         data: dict d["x"] = ["I", "live", ...]
     """
-    spacings = [max([len(seq[i]) for seq in data.itervalues()]) for i in range(len(data[data.keys()[0]]))]
+    spacings = [max([len(seq[i]) for seq in data.values()]) for i in range(len(data[list(data.keys())[0]]))]
     # Compute the word spacing
-    for key, seq in data.iteritems():
+    for key, seq in data.items():
         # logger.info("{} : ".format(key))
         to_print = ""
         for token, spacing in zip(seq, spacings):

@@ -6,25 +6,18 @@ from general_utils import Progbar, print_sentence
 
 
 class NERModel(object):
-    def __init__(self, config, embeddings, ntags, nchars=None, logger=None):
+    def __init__(self, config, embeddings, ntags, nchars=None):
         """
         Args:
             config: class with hyper parameters
             embeddings: np array with embeddings
             nchars: (int) size of chars vocabulary
-            logger: logger instance
         """
         self.config     = config
         self.embeddings = embeddings
         self.nchars     = nchars
         self.ntags      = ntags
-        
-        if logger is None:
-            logger = logging.getLogger('logger')
-            logger.setLevel(logging.DEBUG)
-            logging.basicConfig(format='%(message)s', level=logging.DEBUG)
-
-        self.logger = logger
+        self.logger     = config.logger # now instantiated in config
 
 
     def add_placeholders(self):
@@ -33,7 +26,7 @@ class NERModel(object):
         """
 
         # shape = (batch size, max length of sentence in batch)
-        self.word_ids = tf.placeholder(tf.int32, shape=[None, None], 
+        self.word_ids = tf.placeholder(tf.int32, shape=[None, None],
                         name="word_ids")
 
         # shape = (batch size)
@@ -41,11 +34,11 @@ class NERModel(object):
                         name="sequence_lengths")
 
         # shape = (batch size, max length of sentence, max length of word)
-        self.char_ids = tf.placeholder(tf.int32, shape=[None, None, None], 
+        self.char_ids = tf.placeholder(tf.int32, shape=[None, None, None],
                         name="char_ids")
 
         # shape = (batch_size, max_length of sentence)
-        self.word_lengths = tf.placeholder(tf.int32, shape=[None, None], 
+        self.word_lengths = tf.placeholder(tf.int32, shape=[None, None],
                         name="word_lengths")
 
         # shape = (batch size, max length of sentence in batch)
@@ -53,7 +46,7 @@ class NERModel(object):
                         name="labels")
 
         # hyper parameters
-        self.dropout = tf.placeholder(dtype=tf.float32, shape=[], 
+        self.dropout = tf.placeholder(dtype=tf.float32, shape=[],
                         name="dropout")
         self.lr = tf.placeholder(dtype=tf.float32, shape=[], 
                         name="lr")
@@ -124,11 +117,16 @@ class NERModel(object):
                 char_embeddings = tf.reshape(char_embeddings, shape=[-1, s[-2], self.config.dim_char])
                 word_lengths = tf.reshape(self.word_lengths, shape=[-1])
                 # bi lstm on chars
-                lstm_cell = tf.contrib.rnn.LSTMCell(self.config.char_hidden_size, 
+                # need 2 instances of cells since tf 1.1
+                cell_fw = tf.contrib.rnn.LSTMCell(self.config.char_hidden_size, 
                                                     state_is_tuple=True)
-                _, ((_, output_fw), (_, output_bw)) = tf.nn.bidirectional_dynamic_rnn(lstm_cell, 
-                    lstm_cell, char_embeddings, sequence_length=word_lengths, 
+                cell_bw = tf.contrib.rnn.LSTMCell(self.config.char_hidden_size, 
+                                                    state_is_tuple=True)
+
+                _, ((_, output_fw), (_, output_bw)) = tf.nn.bidirectional_dynamic_rnn(cell_fw, 
+                    cell_bw, char_embeddings, sequence_length=word_lengths, 
                     dtype=tf.float32)
+
                 output = tf.concat([output_fw, output_bw], axis=-1)
                 # shape = (batch size, max sentence length, char hidden size)
                 output = tf.reshape(output, shape=[-1, s[1], 2*self.config.char_hidden_size])
@@ -143,9 +141,10 @@ class NERModel(object):
         Adds logits to self
         """
         with tf.variable_scope("bi-lstm"):
-            lstm_cell = tf.contrib.rnn.LSTMCell(self.config.hidden_size)
-            (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(lstm_cell, 
-                lstm_cell, self.word_embeddings, sequence_length=self.sequence_lengths, 
+            cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size)
+            cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size)
+            (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(cell_fw, 
+                cell_bw, self.word_embeddings, sequence_length=self.sequence_lengths, 
                 dtype=tf.float32)
             output = tf.concat([output_fw, output_bw], axis=-1)
             output = tf.nn.dropout(output, self.dropout)
@@ -162,12 +161,14 @@ class NERModel(object):
             pred = tf.matmul(output, W) + b
             self.logits = tf.reshape(pred, [-1, ntime_steps, self.ntags])
 
+
     def add_pred_op(self):
         """
         Adds labels_pred to self
         """
         if not self.config.crf:
             self.labels_pred = tf.cast(tf.argmax(self.logits, axis=-1), tf.int32)
+
 
     def add_loss_op(self):
         """
@@ -257,7 +258,7 @@ class NERModel(object):
             tags: {tag: index} dictionary
             epoch: (int) number of the epoch
         """
-        nbatches = (len(train) + self.config.batch_size - 1) / self.config.batch_size
+        nbatches = (len(train) + self.config.batch_size - 1) // self.config.batch_size
         prog = Progbar(target=nbatches)
         for i, (words, labels) in enumerate(minibatches(train, self.config.batch_size)):
             fd, _ = self.get_feed_dict(words, labels, self.config.lr, self.config.dropout)
@@ -294,8 +295,7 @@ class NERModel(object):
             for lab, lab_pred, length in zip(labels, labels_pred, sequence_lengths):
                 lab = lab[:length]
                 lab_pred = lab_pred[:length]
-                accs += map(lambda (a, b): a == b, zip(lab, lab_pred))
-
+                accs += [a==b for (a, b) in zip(lab, lab_pred)]
                 lab_chunks = set(get_chunks(lab, tags))
                 lab_pred_chunks = set(get_chunks(lab_pred, tags))
                 correct_preds += len(lab_chunks & lab_pred_chunks)
@@ -312,6 +312,7 @@ class NERModel(object):
     def train(self, train, dev, tags):
         """
         Performs training with early stopping and lr exponential decay
+
         Args:
             train: dataset that yields tuple of sentences, tags
             dev: dataset
@@ -360,23 +361,36 @@ class NERModel(object):
 
 
     def interactive_shell(self, tags, processing_word):
-        idx_to_tag = {idx: tag for tag, idx in tags.iteritems()}
+        idx_to_tag = {idx: tag for tag, idx in tags.items()}
         saver = tf.train.Saver()
         with tf.Session() as sess:
             saver.restore(sess, self.config.model_output)
-            self.logger.info("This is an interactive mode, enter a sentence:")
+            self.logger.info("""
+This is an interactive mode.
+To exit, enter 'exit'. 
+You can enter a sentence like
+input> I love Paris""")
             while True:
                 try:
-                    sentence = raw_input("input> ")
+                    try:
+                        # for python 2
+                        sentence = raw_input("input> ")
+                    except NameError:
+                        # for python 3
+                        sentence = input("input> ")
+
                     words_raw = sentence.strip().split(" ")
-                    words = map(processing_word, words_raw)
+
+                    if words_raw == ["exit"]:
+                        break
+
+                    words = [processing_word(w) for w in words_raw]
                     if type(words[0]) == tuple:
                         words = zip(*words)
                     pred_ids, _ = self.predict_batch(sess, [words])
-                    preds = map(lambda idx: idx_to_tag[idx], list(pred_ids[0]))
+                    preds = [idx_to_tag[idx] for idx in list(pred_ids[0])]
                     print_sentence(self.logger, {"x": words_raw, "y": preds})
-                except EOFError:
-                    print("Closing session.")
-                    break
 
+                except Exception:
+                    pass
 

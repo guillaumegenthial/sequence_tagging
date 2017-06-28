@@ -80,14 +80,14 @@ def get_vocabs(datasets):
     Return:
         a set of all the words in the dataset
     """
-    print "Building vocab..."
+    print("Building vocab...")
     vocab_words = set()
     vocab_tags = set()
     for dataset in datasets:
         for words, tags in dataset:
             vocab_words.update(words)
             vocab_tags.update(tags)
-    print "- done. {} tokens".format(len(vocab_words))
+    print("- done. {} tokens".format(len(vocab_words)))
     return vocab_words, vocab_tags
 
 
@@ -111,13 +111,13 @@ def get_glove_vocab(filename):
     Args:
         filename: path to the glove vectors
     """
-    print "Building vocab..."
+    print("Building vocab...")
     vocab = set()
     with open(filename) as f:
         for line in f:
             word = line.strip().split(' ')[0]
             vocab.add(word)
-    print "- done. {} tokens".format(len(vocab))
+    print("- done. {} tokens".format(len(vocab)))
     return vocab
 
 
@@ -131,14 +131,14 @@ def write_vocab(vocab, filename):
     Returns:
         write a word per line
     """
-    print "Writing vocab..."
+    print("Writing vocab...")
     with open(filename, "w") as f:
         for i, word in enumerate(vocab):
             if i != len(vocab) - 1:
                 f.write("{}\n".format(word))
             else:
                 f.write(word)
-    print "- done. {} tokens".format(len(vocab))
+    print("- done. {} tokens".format(len(vocab)))
 
 
 def load_vocab(filename):
@@ -172,7 +172,7 @@ def export_trimmed_glove_vectors(vocab, glove_filename, trimmed_filename, dim):
         for line in f:
             line = line.strip().split(' ')
             word = line[0]
-            embedding = map(float, line[1:])
+            embedding = [float(x) for x in line[1:]]
             if word in vocab:
                 word_idx = vocab[word]
                 embeddings[word_idx] = np.asarray(embedding)
@@ -187,8 +187,8 @@ def get_trimmed_glove_vectors(filename):
     Returns:
         matrix of embeddings (np array)
     """
-    with open(filename) as f:
-        return np.load(f)["embeddings"]
+    with np.load(filename) as data:
+        return data["embeddings"]
 
 
 def get_processing_word(vocab_words=None, vocab_chars=None, 
@@ -305,8 +305,17 @@ def minibatches(data, minibatch_size):
 
 
 def get_chunk_type(tok, idx_to_tag):
+    """
+    Args:
+        tok: id of token, ex 4
+        idx_to_tag: dictionary {4: "B-PER", ...}
+    Returns:
+        tuple: "B", "PER"
+    """
     tag_name = idx_to_tag[tok]
-    return tag_name.split('-')[-1]
+    tag_class = tag_name.split('-')[0]
+    tag_type = tag_name.split('-')[-1]
+    return tag_class, tag_type
 
 
 def get_chunks(seq, tags):
@@ -323,7 +332,7 @@ def get_chunks(seq, tags):
         result = [("PER", 0, 2), ("LOC", 3, 4)]
     """
     default = tags[NONE]
-    idx_to_tag = {idx: tag for tag, idx in tags.iteritems()}
+    idx_to_tag = {idx: tag for tag, idx in tags.items()}
     chunks = []
     chunk_type, chunk_start = None, None
     for i, tok in enumerate(seq):
@@ -336,10 +345,10 @@ def get_chunks(seq, tags):
 
         # End of a chunk + start of a chunk!
         elif tok != default:
-            tok_chunk_type = get_chunk_type(tok, idx_to_tag)
+            tok_chunk_class, tok_chunk_type = get_chunk_type(tok, idx_to_tag)
             if chunk_type is None:
                 chunk_type, chunk_start = tok_chunk_type, i
-            elif tok_chunk_type != chunk_type or tok[0] == "B":
+            elif tok_chunk_type != chunk_type or tok_chunk_class == "B":
                 chunk = (chunk_type, chunk_start, i)
                 chunks.append(chunk)
                 chunk_type, chunk_start = tok_chunk_type, i
@@ -349,4 +358,5 @@ def get_chunks(seq, tags):
     if chunk_type is not None:
         chunk = (chunk_type, chunk_start, len(seq))
         chunks.append(chunk)
+    
     return chunks
