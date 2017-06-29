@@ -71,3 +71,7 @@ Data iterators and utils are in `data_utils.py` and the model with training/test
 Training time on NVidia Tesla K80 is 110 seconds per epoch on CoNLL train set using characters embeddings and CRF.
 
 
+## License 
+
+This project is licensed under the terms of the apache 2.0 license (as Tensorflow and derivatives). If used for research, citation would be appreciated.
+
