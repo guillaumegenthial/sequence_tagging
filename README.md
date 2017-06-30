@@ -53,6 +53,7 @@ test_filename = "data/coNLL/eng/eng.testb.iob"
 train_filename = "data/coNLL/eng/eng.train.iob"
 ```
 
+You also need to download GloVe vectors.
 
 ## Usage
 
