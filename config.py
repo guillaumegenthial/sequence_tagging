@@ -21,8 +21,6 @@ class Config():
     dim = 300
     dim_char = 100
     glove_filename = "data/glove.6B/glove.6B.{}d.txt".format(dim)
-    
-    # trimmed embeddings (created from glove_filename with build_data.py)
     trimmed_filename = "data/glove.6B.{}d.trimmed.npz".format(dim)
 
     # dataset
