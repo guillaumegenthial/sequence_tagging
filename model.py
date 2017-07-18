@@ -193,9 +193,20 @@ class NERModel(object):
         Add train_op to self
         """
         with tf.variable_scope("train_step"):
-            optimizer = tf.train.AdamOptimizer(self.lr)
-            self.train_op = optimizer.minimize(self.loss)
+            if self.config.lr_method == 'adam':
+                optimizer = tf.train.AdamOptimizer(self.lr)
+            elif self.config.lr_method == 'adagrad':
+                optimizer = tf.train.AdagradOptimizer(self.lr)
+            elif self.config.lr_method == 'sgd':
+                optimizer = tf.train.GradientDescentOptimizer(self.lr)
 
+            if self.config.clip > 0:
+                #https://stackoverflow.com/questions/43144785/how-to-clip-the-gradient-norm-on-the-grad-and-var-tuple-in-tensorflow-r1-0
+                gradients, variables = zip(*optimizer.compute_gradients(self.loss))
+                gradients, _ = tf.clip_by_global_norm(gradients, self.config.clip)
+                self.train_op = optimizer.apply_gradients(zip(gradients, variables))
+            else:
+                self.train_op = optimizer.minimize(self.loss)
 
     def add_init_op(self):
         self.init = tf.global_variables_initializer()
@@ -324,6 +335,9 @@ class NERModel(object):
         nepoch_no_imprv = 0
         with tf.Session() as sess:
             sess.run(self.init)
+            if self.config.reload:
+                self.logger.info("Reloading the latest trained model...")
+                saver.restore(sess, self.config.model_output)
             # tensorboard
             self.add_summary(sess)
             for epoch in range(self.config.nepochs):
