@@ -12,7 +12,7 @@ class CoNLLDataset(object):
     __iter__ method yields a tuple (words, tags)
         words: list of raw words
         tags: list of raw tags
-    If processing_word and processing_tag are not None,
+    If processing_word and processing_tag are not None, 
     optional preprocessing is appplied
 
     Example:
@@ -22,7 +22,7 @@ class CoNLLDataset(object):
             pass
         ```
     """
-    def __init__(self, filename, processing_word=None, processing_tag=None,
+    def __init__(self, filename, processing_word=None, processing_tag=None, 
                  max_iter=None):
         """
         Args:
@@ -52,8 +52,7 @@ class CoNLLDataset(object):
                         yield words, tags
                         words, tags = [], []
                 else:
-                    ls = line.split(' ')
-                    word, tag = ls[0],ls[-1]
+                    word, tag = line.split(' ')
                     if self.processing_word is not None:
                         word = self.processing_word(word)
                     if self.processing_tag is not None:
@@ -161,7 +160,7 @@ def load_vocab(filename):
 def export_trimmed_glove_vectors(vocab, glove_filename, trimmed_filename, dim):
     """
     Saves glove vectors in numpy array
-
+    
     Args:
         vocab: dictionary vocab[word] = index
         glove_filename: a path to a glove file
@@ -192,12 +191,12 @@ def get_trimmed_glove_vectors(filename):
         return data["embeddings"]
 
 
-def get_processing_word(vocab_words=None, vocab_chars=None,
+def get_processing_word(vocab_words=None, vocab_chars=None, 
                     lowercase=False, chars=False):
     """
     Args:
         vocab: dict[word] = idx
-    Returns:
+    Returns: 
         f("cat") = ([12, 4, 32], 12345)
                  = (list of char ids, word id)
     """
@@ -261,9 +260,9 @@ def pad_sequences(sequences, pad_tok, nlevels=1):
     """
     if nlevels == 1:
         max_length = max(map(lambda x : len(x), sequences))
-        sequence_padded, sequence_length = _pad_sequences(sequences,
+        sequence_padded, sequence_length = _pad_sequences(sequences, 
                                             pad_tok, max_length)
-
+        
     elif nlevels == 2:
         max_length_word = max([max(map(lambda x: len(x), seq)) for seq in sequences])
         sequence_padded, sequence_length = [], []
@@ -274,7 +273,7 @@ def pad_sequences(sequences, pad_tok, nlevels=1):
             sequence_length += [sl]
 
         max_length_sentence = max(map(lambda x : len(x), sequences))
-        sequence_padded, _ = _pad_sequences(sequence_padded, [pad_tok]*max_length_word,
+        sequence_padded, _ = _pad_sequences(sequence_padded, [pad_tok]*max_length_word, 
                                             max_length_sentence)
         sequence_length, _ = _pad_sequences(sequence_length, 0, max_length_sentence)
 
@@ -287,7 +286,7 @@ def minibatches(data, minibatch_size):
     Args:
         data: generator of (sentence, tags) tuples
         minibatch_size: (int)
-    Returns:
+    Returns: 
         list of tuples
     """
     x_batch, y_batch = [], []
@@ -295,7 +294,7 @@ def minibatches(data, minibatch_size):
         if len(x_batch) == minibatch_size:
             yield x_batch, y_batch
             x_batch, y_batch = [], []
-
+        
         if type(x[0]) == tuple:
             x = zip(*x)
         x_batch += [x]
@@ -359,5 +358,5 @@ def get_chunks(seq, tags):
     if chunk_type is not None:
         chunk = (chunk_type, chunk_start, len(seq))
         chunks.append(chunk)
-
+    
     return chunks
