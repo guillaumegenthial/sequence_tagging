@@ -1,4 +1,5 @@
 *sh
 *pyc
 /data
+!/data/.gitkeep
 /results

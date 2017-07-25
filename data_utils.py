@@ -1,9 +1,25 @@
 import numpy as np
 import os
 
+
+# shared global variables to be imported from model also
 UNK = "$UNK$"
 NUM = "$NUM$"
 NONE = "O"
+
+# special error message
+class MyIOError(Exception):
+    def __init__(self, filename):
+        # custom error message
+        message = """
+ERROR: Unable to locate file {}.
+
+FIX: Have you tried running python build_data.py first?
+This will build vocab file from your train, test and dev sets and
+trimm your word vectors.
+""".format(filename)
+        super(MyIOError, self).__init__(message)
+
 
 class CoNLLDataset(object):
     """
@@ -149,12 +165,15 @@ def load_vocab(filename):
     Returns:
         d: dict[word] = index
     """
-    d = dict()
-    with open(filename) as f:
-        for idx, word in enumerate(f):
-            word = word.strip()
-            d[word] = idx
+    try:
+        d = dict()
+        with open(filename) as f:
+            for idx, word in enumerate(f):
+                word = word.strip()
+                d[word] = idx
 
+    except IOError:
+        raise MyIOError(filename)
     return d
 
 
@@ -188,8 +207,12 @@ def get_trimmed_glove_vectors(filename):
     Returns:
         matrix of embeddings (np array)
     """
-    with np.load(filename) as data:
-        return data["embeddings"]
+    try:
+        with np.load(filename) as data:
+            return data["embeddings"]
+
+    except IOError:
+        raise MyIOError(filename)
 
 
 def get_processing_word(vocab_words=None, vocab_chars=None,

@@ -44,9 +44,10 @@ class Config():
     lr_method = "adam"
     lr = 0.001
     lr_decay = 0.9
-    clip = -1
+    clip = -1 # if negative, no clipping
     nepoch_no_imprv = 3
-    reload = True
+    reload = False
+    
     # model hyperparameters
     hidden_size = 300
     char_hidden_size = 100
