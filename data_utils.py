@@ -216,7 +216,7 @@ def get_trimmed_glove_vectors(filename):
 
 
 def get_processing_word(vocab_words=None, vocab_chars=None,
-                    lowercase=False, chars=False):
+                    lowercase=False, chars=False, allow_unk=True):
     """
     Args:
         vocab: dict[word] = idx
@@ -244,7 +244,10 @@ def get_processing_word(vocab_words=None, vocab_chars=None,
             if word in vocab_words:
                 word = vocab_words[word]
             else:
-                word = vocab_words[UNK]
+                if allow_unk:
+                    word = vocab_words[UNK]
+                else:
+                    raise Exception("Unknow key is not allowed. Check that your vocab (tags?) is correct")
 
         # 3. return tuple char ids, word id
         if vocab_chars is not None and chars == True:

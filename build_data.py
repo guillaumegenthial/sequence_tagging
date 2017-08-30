@@ -35,7 +35,7 @@ def build_data(config):
 
     # Trim GloVe Vectors
     vocab = load_vocab(config.words_filename)
-    export_trimmed_glove_vectors(vocab, config.glove_filename, 
+    export_trimmed_glove_vectors(vocab, config.glove_filename,
                                 config.trimmed_filename, config.dim)
 
     # Build and save char vocab

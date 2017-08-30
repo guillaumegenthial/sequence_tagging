@@ -14,7 +14,7 @@ def main(config):
     processing_word = get_processing_word(vocab_words, vocab_chars,
                     lowercase=True, chars=config.chars)
     processing_tag  = get_processing_word(vocab_tags, 
-                    lowercase=False)
+                    lowercase=False, allow_unk=False)
 
     # get pre trained embeddings
     embeddings = get_trimmed_glove_vectors(config.trimmed_filename)
