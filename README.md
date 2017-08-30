@@ -1,10 +1,10 @@
 # Sequence Tagging (Named Entity Recognition) with Tensorflow
 
-This repo implements a sequence tagging model using tensorflow.
+This repo implements a sequence tagging model using tensorflow (LSTM + CRF + chars embeddings).
 
-State-of-the-art performance (F1 score close to 91).
+State-of-the-art performance (F1 score between 90 and 91).
 
-Check my [blog post](https://guillaumegenthial.github.io/sequence-tagging-with-tensorflow.html)
+Check the [blog post](https://guillaumegenthial.github.io/sequence-tagging-with-tensorflow.html)
 
 ## Task
 
@@ -24,9 +24,9 @@ Similar to [Lample et al.](https://arxiv.org/abs/1603.01360) and [Ma and Hovy](h
 - run a bi-lstm on each sentence to extract contextual representation of each word
 - decode with a linear chain CRF
 
-## Data
+## Data and Word Vectors
 
-The training data must be in the following format (identical to the CoNLL2003 dataset).
+The training data must be in the following format (identical to the CoNLL2003 dataset). We provide an example in test.txt.
 
 
 ```
@@ -44,7 +44,7 @@ sentence
 ```
 
 
-Once you have produced your txt files, change the parameters in `config.py` like
+Once you have produced your data files, change the parameters in `config.py` like
 
 ```
 # dataset
@@ -53,9 +53,12 @@ test_filename = "data/coNLL/eng/eng.testb.iob"
 train_filename = "data/coNLL/eng/eng.train.iob"
 ```
 
-You also need to download GloVe vectors.
+You also need to download [GloVe vectors](https://nlp.stanford.edu/projects/glove/) and update the `glove_filename` entry in `config.py`
 
-## Usage
+
+## Getting started
+
+Make sure that you have downloaded GloVe vectors and produced your data files.
 
 First, build vocab from the data and extract trimmed glove vectors according to the config in `config.py`.
 
@@ -69,7 +72,7 @@ Second, train and test model with
 python main.py
 ```
 
-Data iterators and utils are in `data_utils.py` and the model with training/test procedures are in `model.py`
+Data iterators and utils are in `data_utils.py` and the model with training/test procedures is in `model.py`
 
 Training time on NVidia Tesla K80 is 110 seconds per epoch on CoNLL train set using characters embeddings and CRF.
 

@@ -26,9 +26,15 @@ class Config():
     trimmed_filename = "data/glove.6B.{}d.trimmed.npz".format(dim)
 
     # dataset
-    dev_filename = "data/coNLL/eng/eng.testa.iob"
-    test_filename = "data/coNLL/eng/eng.testb.iob"
-    train_filename = "data/coNLL/eng/eng.train.iob"
+    # dev_filename = "data/coNLL/eng/eng.testa.iob"
+    # test_filename = "data/coNLL/eng/eng.testb.iob"
+    # train_filename = "data/coNLL/eng/eng.train.iob"
+
+    # for test purposes
+    dev_filename = "data/test.txt"
+    test_filename = "data/test.txt"
+    train_filename = "data/test.txt"
+
     max_iter = None # if not None, max number of examples
 
     # vocab (created from dataset with build_data.py)
@@ -38,14 +44,14 @@ class Config():
     
     # training
     train_embeddings = False
-    nepochs = 15
+    nepochs = 20
     dropout = 0.5
     batch_size = 20
     lr_method = "adam"
     lr = 0.001
     lr_decay = 0.9
     clip = -1 # if negative, no clipping
-    nepoch_no_imprv = 3
+    nepoch_no_imprv = 4
     reload = False
     
     # model hyperparameters
