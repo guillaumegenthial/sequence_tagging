@@ -200,6 +200,8 @@ class NERModel(object):
                 optimizer = tf.train.AdagradOptimizer(self.lr)
             elif self.config.lr_method == 'sgd':
                 optimizer = tf.train.GradientDescentOptimizer(self.lr)
+            elif self.config.lr_method == 'rmsprop':
+                optimizer = tf.train.RMSPropOptimizer(self.lr)
             else:
                 raise NotImplementedError("Unknown train op {}".format(
                                           self.config.lr_method))
