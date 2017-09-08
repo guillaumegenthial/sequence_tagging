@@ -53,20 +53,24 @@ test_filename = "data/coNLL/eng/eng.testb.iob"
 train_filename = "data/coNLL/eng/eng.train.iob"
 ```
 
-You also need to download [GloVe vectors](https://nlp.stanford.edu/projects/glove/) and update the `glove_filename` entry in `config.py`
-
-
 ## Getting started
 
-Make sure that you have downloaded GloVe vectors and produced your data files.
+First, download the GloVe vectors with
 
-First, build vocab from the data and extract trimmed glove vectors according to the config in `config.py`.
+
+```
+make glove
+```
+
+Alternatively, you can download them manually [here](https://nlp.stanford.edu/projects/glove/) and update the `glove_filename` entry in `config.py`
+
+Second, build vocab from the data and extract trimmed glove vectors according to the config in `config.py`.
 
 ```
 python build_data.py
 ```
 
-Second, train and test model with 
+Third, train and test model with 
 
 ```
 python main.py
