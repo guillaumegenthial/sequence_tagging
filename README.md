@@ -1,6 +1,6 @@
-# Sequence Tagging (Named Entity Recognition) with Tensorflow
+# Named Entity Recognition with Tensorflow
 
-This repo implements a sequence tagging model using tensorflow (LSTM + CRF + chars embeddings).
+This repo implements a NER model using Tensorflow (LSTM + CRF + chars embeddings).
 
 State-of-the-art performance (F1 score between 90 and 91).
 
@@ -11,9 +11,10 @@ Check the [blog post](https://guillaumegenthial.github.io/sequence-tagging-with-
 Given a sentence, give a tag to each word. A classical application is Named Entity Recognition (NER). Here is an example
 
 ```
-John lives in New York
-PER  O     O  LOC LOC
+John   lives in New   York
+B-PER  O     O  B-LOC I-LOC
 ```
+
 
 ## Model
 
@@ -24,9 +25,43 @@ Similar to [Lample et al.](https://arxiv.org/abs/1603.01360) and [Ma and Hovy](h
 - run a bi-lstm on each sentence to extract contextual representation of each word
 - decode with a linear chain CRF
 
-## Data and Word Vectors
 
-The training data must be in the following format (identical to the CoNLL2003 dataset). We provide an example in test.txt.
+
+## Getting started
+
+1. Download the GloVe vectors with
+
+```
+make glove
+```
+
+Alternatively, you can download them manually [here](https://nlp.stanford.edu/projects/glove/) and update the `glove_filename` entry in `config.py`
+
+2. Build vocab from the data and extract trimmed glove vectors according to the config in `config.py`.
+
+```
+python build_data.py
+```
+
+3. Train and test model with 
+
+```
+python main.py
+```
+
+Data iterators and utils are in `data_utils.py` and the model with training/test procedures is in `model.py`
+
+Training time on NVidia Tesla K80 is 110 seconds per epoch on CoNLL train set using characters embeddings and CRF.
+
+
+
+
+## Data
+
+
+The training data must be in the following format (identical to the CoNLL2003 dataset). 
+
+A default test file is provided to help you getting started.
 
 
 ```
@@ -53,32 +88,7 @@ test_filename = "data/coNLL/eng/eng.testb.iob"
 train_filename = "data/coNLL/eng/eng.train.iob"
 ```
 
-## Getting started
 
-First, download the GloVe vectors with
-
-
-```
-make glove
-```
-
-Alternatively, you can download them manually [here](https://nlp.stanford.edu/projects/glove/) and update the `glove_filename` entry in `config.py`
-
-Second, build vocab from the data and extract trimmed glove vectors according to the config in `config.py`.
-
-```
-python build_data.py
-```
-
-Third, train and test model with 
-
-```
-python main.py
-```
-
-Data iterators and utils are in `data_utils.py` and the model with training/test procedures is in `model.py`
-
-Training time on NVidia Tesla K80 is 110 seconds per epoch on CoNLL train set using characters embeddings and CRF.
 
 
 ## License 
