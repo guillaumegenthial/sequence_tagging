@@ -4,38 +4,31 @@ import logging
 import numpy as np
 
 
-def print_sentence(logger, data):
-    """
-    Adapted from Assignment 3 of CS224N
+def get_logger(filename):
+    """Return a logger instance that writes in filename
 
     Args:
-        logger: logger instance
-        data: dict d["x"] = ["I", "live", ...]
+        filename: (string) path to log.txt
+
+    Returns:
+        logger: (instance of logger)
+
     """
-    spacings = [max([len(seq[i]) for seq in data.values()]) for i in range(len(data[list(data.keys())[0]]))]
-    # Compute the word spacing
-    for key, seq in data.items():
-        # logger.info("{} : ".format(key))
-        to_print = ""
-        for token, spacing in zip(seq, spacings):
-            to_print += token + " " * (spacing - len(token) + 1)
-        logger.info(to_print)
-
-
-def get_logger(filename):
     logger = logging.getLogger('logger')
     logger.setLevel(logging.DEBUG)
     logging.basicConfig(format='%(message)s', level=logging.DEBUG)
     handler = logging.FileHandler(filename)
     handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s: %(message)s'))
+    handler.setFormatter(logging.Formatter(
+            '%(asctime)s:%(levelname)s: %(message)s'))
     logging.getLogger().addHandler(handler)
+
     return logger
 
 
 class Progbar(object):
     """Progbar class copied from keras (https://github.com/fchollet/keras/)
-    
+
     Displays a progress bar.
     Small edit : added strict arg to update
     # Arguments
@@ -66,7 +59,8 @@ class Progbar(object):
 
         for k, v in values:
             if k not in self.sum_values:
-                self.sum_values[k] = [v * (current - self.seen_so_far), current - self.seen_so_far]
+                self.sum_values[k] = [v * (current - self.seen_so_far),
+                                      current - self.seen_so_far]
                 self.unique_values.append(k)
             else:
                 self.sum_values[k][0] += v * (current - self.seen_so_far)
@@ -117,7 +111,8 @@ class Progbar(object):
                 info += ' - %ds' % (now - self.start)
             for k in self.unique_values:
                 if type(self.sum_values[k]) is list:
-                    info += ' - %s: %.4f' % (k, self.sum_values[k][0] / max(1, self.sum_values[k][1]))
+                    info += ' - %s: %.4f' % (k,
+                        self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                 else:
                     info += ' - %s: %s' % (k, self.sum_values[k])
 
@@ -135,7 +130,8 @@ class Progbar(object):
             if current >= self.target:
                 info = '%ds' % (now - self.start)
                 for k in self.unique_values:
-                    info += ' - %s: %.4f' % (k, self.sum_values[k][0] / max(1, self.sum_values[k][1]))
+                    info += ' - %s: %.4f' % (k,
+                        self.sum_values[k][0] / max(1, self.sum_values[k][1]))
                 sys.stdout.write(info + "\n")
 
     def add(self, n, values=[]):

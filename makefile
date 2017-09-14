@@ -5,4 +5,5 @@ glove:
 
 run:
 	python build_data.py
-	python main.py
+	python train.py
+	python evaluate.py

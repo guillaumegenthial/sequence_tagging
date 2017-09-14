@@ -35,8 +35,8 @@ York I-LOC
 The O
 European B-ORG
 Union I-ORG
-is O 
-a O 
+is O
+a O
 political O
 and O
 economic O
@@ -61,8 +61,8 @@ York I-LOC
 The O
 European B-ORG
 Union I-ORG
-is O 
-a O 
+is O
+a O
 political O
 and O
 economic O
@@ -87,8 +87,8 @@ York I-LOC
 The O
 European B-ORG
 Union I-ORG
-is O 
-a O 
+is O
+a O
 political O
 and O
 economic O
