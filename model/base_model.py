@@ -15,6 +15,15 @@ class BaseModel(object):
         """
         self.config = config
         self.logger = config.logger
+        self.sess   = None
+        self.saver  = None
+
+
+    def reinitialize_weights(self, scope_name):
+        """Reinitializes the weights of a given layer"""
+        variables = tf.contrib.framework.get_variables(scope_name)
+        init = tf.variables_initializer(variables)
+        self.sess.run(init)
 
 
     def add_train_op(self, lr_method, lr, loss, clip=-1):

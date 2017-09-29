@@ -10,7 +10,8 @@ def main():
     # build model
     model = NERModel(config)
     model.build()
-    # model.restore_session("tmp/model.weights/") # optional, restore weights
+    # model.restore_session("results/crf/model.weights/") # optional, restore weights
+    # model.reinitialize_weights("proj")
 
     # create datasets
     dev   = CoNLLDataset(config.filename_dev, config.processing_word,
