@@ -256,7 +256,7 @@ class NERModel(BaseModel):
             return viterbi_sequences, sequence_lengths
 
         else:
-            labels_pred = sess.run(self.labels_pred, feed_dict=fd)
+            labels_pred = self.sess.run(self.labels_pred, feed_dict=fd)
 
             return labels_pred, sequence_lengths
 
