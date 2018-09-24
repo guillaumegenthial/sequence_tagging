@@ -2,6 +2,8 @@
 
 This repo implements a NER model using Tensorflow (LSTM + CRF + chars embeddings).
 
+__A [better implementation is available here, using `tf.data` and `tf.estimator`, and achieves an F1 of 91.21](https://github.com/guillaumegenthial/tf_ner)__
+
 State-of-the-art performance (F1 score between 90 and 91).
 
 Check the [blog post](https://guillaumegenthial.github.io/sequence-tagging-with-tensorflow.html)
